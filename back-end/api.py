@@ -6,7 +6,7 @@ from PIL import Image
 from datetime import datetime
 import flux, flux_kontent
 
-app = FastAPI()
+app = FastAPI() # uvicorn api:app --reload
 
 FLUX_TYPE = None
 FLUX_PIPELINE = None
@@ -16,12 +16,15 @@ OUTPUT_DIR = Path("outputs")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+def get_timestamp():
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
 @app.post("/upload")
 async def upload(image: UploadFile = File(...)):
     if image.content_type not in ["image/png", "image/jpeg", "image/jpg", "image/webp"]:
         raise HTTPException(status_code = 400, detail = "Only image files (.png, .jpeg, .jpg, .webp) are allowed.")
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = get_timestamp()
     upload_path = UPLOAD_DIR / f"{timestamp}.png"
 
     with upload_path.open("wb") as buffer:
@@ -46,11 +49,8 @@ async def generate(prompt: str, image_path: str = None, width: int = 1024, heigh
     image = Image.open(UPLOAD_DIR / image_path)
     result = flux_kontent.generate_image(FLUX_PIPELINE, image, prompt, width, height)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = get_timestamp()
     output_path = OUTPUT_DIR / f"{timestamp}.png"
     result.save(output_path)
 
     return {"path": str(output_path)}
-    
-
-    
