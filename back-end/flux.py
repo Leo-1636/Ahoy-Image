@@ -1,19 +1,19 @@
 from diffusers import FluxPipeline, FluxTransformer2DModel
 
 import torch
-from torchao.quantization import quantize_, int8_weight_only
+from torchao.quantization import quantize_, Int8WeightOnlyConfig
 
 def load_model():
     model_id = "black-forest-labs/FLUX.1-dev"
     transformer = FluxTransformer2DModel.from_pretrained(
-        model = model_id, 
+        model_id, 
         subfolder = "transformer",
         torch_dtype = torch.bfloat16,
-    ).to("cuda")
-    quantize_(transformer, int8_weight_only())
+    )
+    quantize_(transformer, Int8WeightOnlyConfig())
 
     pipeline = FluxPipeline.from_pretrained(
-        model = model_id,
+        model_id,
         transformer = transformer,
         torch_dtype = torch.bfloat16,
     )
