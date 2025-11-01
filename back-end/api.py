@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 
 from pathlib import Path
+from PIL import Image
 from datetime import datetime
 import flux, flux_kontent
 
@@ -39,22 +40,11 @@ async def download(path: str):
 
 @app.post("/generate")
 async def generate(prompt: str, image_path: str = None, width: int = 1024, height: int = 1024):
-    target_type = "FLUX.1-Kontext-dev" if image_path else "FLUX.1-dev"
-    if FLUX_TYPE != target_type:
-        try:
-            if target_type == "FLUX.1-dev":
-                FLUX_PIPELINE = flux.load_model()
-            else:
-                FLUX_PIPELINE = flux_kontent.load_model()
-
-            FLUX_TYPE = target_type
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to load model: {e}")
-
-    if FLUX_TYPE == "FLUX.1-dev":
-        result = flux.generate_image(FLUX_PIPELINE, prompt, width, height)
-    else:
-        result = flux_kontent.generate_image(FLUX_PIPELINE, image_path, prompt, width, height)
+    global FLUX_TYPE, FLUX_PIPELINE
+    
+    FLUX_PIPELINE = flux_kontent.load_model()
+    image = Image.open(UPLOAD_DIR / image_path)
+    result = flux_kontent.generate_image(FLUX_PIPELINE, image, prompt, width, height)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_path = OUTPUT_DIR / f"{timestamp}.png"
